@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دفعة – تجارب الطلبة والباحثين</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F5F7;--surface:#fff;--ink:#14202B;--mute:#5E6C79;--line:#DDE3E8;--brand:#0B6E6E;--brand-ink:#fff;--chip:#E4EAEE;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0E151B;--surface:#16212A;--ink:#EAF0F4;--mute:#97A6B3;--line:#27343F;--brand:#3FB8B0;--brand-ink:#06201F;--chip:#202E39;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "IBM Plex Sans Arabic",system-ui,sans-serif;padding-bottom:84px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.wrap{max-width:520px;margin:0 auto;padding-top:env(safe-area-inset-top,0)}
+header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:24px;font-weight:700;color:var(--brand)}.logo small{font-size:12px;font-weight:400;color:var(--mute);margin-right:8px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 16px 12px;scrollbar-width:none}
+.chip{white-space:nowrap;padding:6px 14px;border-radius:999px;background:var(--chip);font-weight:500}.chip.on{background:var(--ink);color:var(--bg)}
+.card{display:block;width:100%;text-align:right;padding:0 0 18px}
+.thumb{aspect-ratio:16/9;display:flex;align-items:flex-end;padding:14px;color:#fff;font-weight:700;font-size:20px;line-height:1.35}
+.thumb span{text-shadow:0 1px 8px rgba(0,0,0,.35);max-width:85%}
+.meta{display:flex;gap:12px;padding:10px 16px 0}
+.av{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;background:var(--brand)}
+.t{font-weight:700;line-height:1.45}.s{color:var(--mute);font-size:13px}
+.vf{display:inline-block;width:14px;height:14px;vertical-align:-2px;margin-inline-start:3px}
+nav{position:fixed;bottom:0;inset-inline:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0);z-index:6}
+nav div{max-width:520px;margin:0 auto;display:flex;justify-content:space-around;align-items:center;padding:6px 0}
+nav button{display:flex;flex-direction:column;align-items:center;font-size:12px;padding:4px 18px;color:var(--mute)}nav button.on{color:var(--brand);font-weight:700}
+nav .plus{background:var(--brand);color:var(--brand-ink);width:46px;height:46px;border-radius:50%;display:grid;place-items:center;padding:0}
+.pad{padding:0 16px}h2{font-size:17px;margin:22px 16px 8px}
+.btn{background:var(--brand);color:var(--brand-ink);padding:8px 18px;border-radius:999px;font-weight:700}.btn.alt{background:var(--chip);color:var(--ink)}
+.fi{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit}
+.form{display:grid;gap:12px;padding:20px 16px}
+.player{aspect-ratio:16/9;background:#0B3C49;display:grid;place-items:center}.player iframe,.player video{width:100%;height:100%;border:0}
+.note{display:flex;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin:8px 16px}
+.ts{flex:none;color:var(--brand);font-weight:700;direction:ltr}
+.row{display:flex;gap:8px;margin:8px 16px}.row .fi{flex:1;min-width:0;border-radius:999px}
+.empty{margin:16px;padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--mute);text-align:center}
+.err{color:#C0392B}.toast{position:fixed;bottom:92px;inset-inline:0;margin:auto;width:max-content;max-width:90%;background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="empty">جارٍ التحميل...</div></div>
+<nav><div>
+<button data-go="home">الرئيسية</button>
+<button class="plus" data-go="upload" aria-label="شارك تجربتك"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></button>
+<button data-go="profile">أنت</button>
+</div></nav>
+<div class="toast" id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+var SB_URL="https://zzeevypkpeurpbdzfhhw.supabase.co",SB_KEY="sb_publishable_1QuehMTMCyNSdI6EuyqlDw_WFbjL1cs";
+var sb=supabase.createClient(SB_URL,SB_KEY);
+var LVN={licence:"ليسانس",master:"ماستر",phd:"دكتوراه"};
+var G=["linear-gradient(135deg,#0B6E6E,#14425A)","linear-gradient(135deg,#3B4A8C,#1B2559)","linear-gradient(135deg,#8A5A1C,#4A2E0C)","linear-gradient(135deg,#6B3F73,#2F1A38)","linear-gradient(135deg,#2E6B3E,#123A20)"];
+var VF='<svg class="vf" viewBox="0 0 24 24" fill="#0B6E6E"><path d="M12 2l2.4 2 3.1-.2 1 2.9 2.7 1.6-.9 3 .9 3-2.7 1.6-1 2.9-3.1-.2L12 22l-2.4-2-3.1.2-1-2.9L2.8 15l.9-3-.9-3 2.7-1.6 1-2.9 3.1.2z"/><path d="M8 12l3 3 5-6" stroke="#fff" stroke-width="2" fill="none"/></svg>';
+var user=null,me=null,vids=[],lv="all",cur=null,notes=[],qs=[],sent="";
+function $(s){return document.querySelector(s)}
+var app=$("#app");
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function toast(m){var e=$("#toast");e.textContent=m;e.classList.add("show");setTimeout(function(){e.classList.remove("show")},2200)}
+function mm(s){return Math.floor(s/60)+":"+("0"+(s%60)).slice(-2)}
+function hs(id){var n=0;for(var i=0;i<id.length;i++)n+=id.charCodeAt(i);return n%5}
+function ok(p){return p&&p.verification&&p.verification!="none"}
+function head(){return '<header><div class="logo">دفعة<small>تجارب الطلبة والباحثين</small></div></header>'}
+
+async function setUser(s){user=s?s.user:null;me=null;if(user){var r=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();me=r.data}}
+async function loadVids(){var r=await sb.from("videos").select("*,profiles(name,university,verification)").order("created_at",{ascending:false});vids=r.data||[]}
+async function openVideo(id){cur=vids.find(function(v){return v.id==id});notes=[];qs=[];sent="";
+var q=await sb.from("questions").select("*,profiles(name)").eq("video_id",id).order("created_at");qs=q.data||[];
+if(user){var n=await sb.from("notes").select("*").eq("video_id",id).order("at_seconds");notes=n.data||[]}
+go("watch")}
+
+function card(v){var p=v.profiles||{};return '<button class="card" data-v="'+esc(v.id)+'"><div class="thumb" style="background:'+G[hs(v.id)]+'"><span>'+esc(v.title)+'</span></div><div class="meta"><div class="av">'+esc((p.name||"؟")[0])+'</div><div><div class="t">'+esc(v.title)+'</div><div class="s">'+esc(p.name||"")+(ok(p)?VF:"")+(p.university?' · '+esc(p.university):"")+'</div><div class="s">'+esc(LVN[v.level]||"")+'</div></div></div></button>'}
+function home(){var l=vids.filter(function(v){return lv=="all"||v.level==lv});
+var ch=[["all","الكل"],["licence","ليسانس"],["master","ماستر"],["phd","دكتوراه"]].map(function(x){return '<button class="chip'+(x[0]==lv?' on':'')+'" data-lv="'+x[0]+'">'+x[1]+'</button>'}).join("");
+return head()+'<div class="chips">'+ch+'</div>'+(l.length?l.map(card).join(""):'<div class="empty">لا توجد تجارب بعد. كن أول من يشارك تجربته من زر +</div>')}
+
+function player(u){var m=u.match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/);
+if(m)return '<iframe src="https://www.youtube-nocookie.com/embed/'+m[1]+'" allowfullscreen title="الفيديو"></iframe>';
+if(/^https:\/\/\S+\.(mp4|webm)(\?\S*)?$/i.test(u))return '<video controls src="'+esc(u)+'"></video>';
+return '<a class="btn" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer">افتح الفيديو</a>'}
+function notesH(){if(!user)return '<div class="empty">سجّل الدخول لتحتفظ بملاحظاتك.</div>';return notes.length?notes.map(function(n){return '<div class="note"><span class="ts">'+mm(n.at_seconds)+'</span><span>'+esc(n.body)+'</span></div>'}).join(""):'<div class="empty">لا ملاحظات بعد.</div>'}
+function qsH(){return qs.length?qs.map(function(q){return '<div class="note"><b>'+esc((q.profiles||{}).name||"طالب")+'</b><span>'+esc(q.body)+'</span></div>'}).join(""):'<div class="empty">لا أسئلة بعد.</div>'}
+function watch(){if(!cur)return home();var v=cur,p=v.profiles||{};
+return '<div class="player">'+player(v.video_url)+'</div><div class="pad"><div class="t" style="font-size:18px;margin-top:10px">'+esc(v.title)+'</div><div class="s">'+esc(p.name||"")+(ok(p)?VF:"")+' · '+esc(p.university||"")+' · '+esc(LVN[v.level]||"")+'</div>'+(v.description?'<p>'+esc(v.description)+'</p>':'')+'</div><h2>ملاحظاتي (خاصة)</h2><div class="row"><input class="fi" id="nt" placeholder="الدقيقة (مثل 3:20)" dir="ltr" style="max-width:130px"><input class="fi" id="nb" placeholder="ملاحظتك"><button class="btn" id="na">أضف</button></div><div id="notes">'+notesH()+'</div><h2>أسئلة وأجوبة</h2><div id="qs">'+qsH()+'</div><div class="row"><input class="fi" id="qi" placeholder="اطرح سؤالًا"><button class="btn" id="qb">إرسال</button></div>'}
+
+function loginV(){if(sent)return head()+'<div class="form"><div class="t" style="font-size:20px">تحقق من بريدك</div><div class="s">أرسلنا رابط الدخول إلى <span dir="ltr">'+esc(sent)+'</span>. افتحه من نفس الهاتف. إن لم يصل، انتظر دقيقة وراجع البريد غير المرغوب.</div></div>';
+return head()+'<div class="form"><div class="t" style="font-size:20px">سجّل الدخول</div><div class="s">بريدك الجامعي يمنحك شارة التوثيق تلقائيًا ويسمح لك بنشر تجاربك.</div><input class="fi" id="em" type="email" dir="ltr" placeholder="name@univ-oran2.dz" autocomplete="email"><button class="btn" id="lg">أرسل رابط الدخول</button><div class="s err" id="err" role="alert"></div></div>'}
+function profileV(){if(!user)return loginV();if(!me)return head()+'<div class="empty">جارٍ تحميل ملفك...</div>';
+var sel=["licence","master","phd"].map(function(k){return '<option value="'+k+'"'+(me.level==k?' selected':'')+'>'+LVN[k]+'</option>'}).join("");
+return head()+'<div class="form"><div class="t" style="font-size:20px">'+esc(me.name||"ملفي")+(ok(me)?VF:"")+'</div><div class="s">'+(ok(me)?'موثّق ✔':'غير موثّق بعد: لا تستطيع النشر إلا بعد التوثيق (بريد جامعي معتمد).')+'</div><div class="s" dir="ltr" style="text-align:right">'+esc(user.email)+'</div><input class="fi" id="pn" placeholder="الاسم" value="'+esc(me.name)+'"><input class="fi" id="pu" placeholder="الجامعة" value="'+esc(me.university)+'"><select class="fi" id="pl"><option value="">المستوى</option>'+sel+'</select><button class="btn" id="ps">حفظ</button><button class="btn alt" id="out">تسجيل الخروج</button><div class="s err" id="err" role="alert"></div></div>'}
+function uploadV(){if(!user)return loginV();if(!ok(me))return head()+'<div class="empty">النشر متاح للطلبة الموثّقين فقط. سجّل ببريدك الجامعي لتحصل على التوثيق.</div>';
+var sel=["licence","master","phd"].map(function(k){return '<option value="'+k+'">'+LVN[k]+'</option>'}).join("");
+return head()+'<div class="form"><div class="t" style="font-size:20px">شارك تجربتك</div><input class="fi" id="vt" placeholder="عنوان الفيديو"><input class="fi" id="vu" type="url" dir="ltr" placeholder="رابط الفيديو (يوتيوب أو mp4)"><select class="fi" id="vl">'+sel+'</select><textarea class="fi" id="vd" rows="3" placeholder="وصف قصير (اختياري)"></textarea><button class="btn" id="vp">نشر</button><div class="s err" id="err" role="alert"></div></div>'}
+
+function render(){var h=location.hash.slice(1)||"home";
+app.innerHTML=h=="watch"?watch():h=="profile"?profileV():h=="upload"?uploadV():home();
+document.querySelectorAll("nav [data-go]").forEach(function(b){var g=b.dataset.go;b.classList.toggle("on",g==h||(h=="watch"&&g=="home"))});window.scrollTo(0,0)}
+function go(h){if(location.hash=="#"+h)render();else location.hash=h}
+function err(m){var e=$("#err");if(e)e.textContent=m}
+window.addEventListener("hashchange",render);
+
+document.addEventListener("click",async function(e){var t=e.target.closest("button");if(!t)return;
+if(t.dataset.go)return go(t.dataset.go);
+if(t.dataset.v)return openVideo(t.dataset.v);
+if(t.dataset.lv){lv=t.dataset.lv;return render()}
+if(t.id=="lg"){var m=$("#em").value.trim();if(!/^\S+@\S+\.\S+$/.test(m))return err("اكتب بريدًا صحيحًا.");t.disabled=true;
+var r=await sb.auth.signInWithOtp({email:m,options:{emailRedirectTo:location.origin+location.pathname}});t.disabled=false;
+if(r.error)return err("تعذّر الإرسال: "+r.error.message);sent=m;return render()}
+if(t.id=="out"){await sb.auth.signOut();sent="";return go("home")}
+if(t.id=="ps"){var r2=await sb.from("profiles").update({name:$("#pn").value.trim(),university:$("#pu").value.trim(),level:$("#pl").value||null}).eq("id",user.id);
+if(r2.error)return err("تعذّر الحفظ.");await setUser({user:user});toast("تم الحفظ");return render()}
+if(t.id=="vp"){var ti=$("#vt").value.trim(),u=$("#vu").value.trim();if(!ti||!/^https:\/\/\S+$/.test(u))return err("أدخل عنوانًا ورابطًا يبدأ بـ https.");
+var r3=await sb.from("videos").insert({author_id:user.id,title:ti,video_url:u,level:$("#vl").value,description:$("#vd").value.trim()||null});
+if(r3.error)return err("تعذّر النشر: "+r3.error.message);await loadVids();toast("تم النشر");return go("home")}
+if(t.id=="na"){if(!user)return toast("سجّل الدخول أولًا");var b=$("#nb").value.trim();if(!b)return;var p=($("#nt").value||"0:00").split(":").map(Number),s=p.length==2?p[0]*60+p[1]:(p[0]||0);if(isNaN(s))s=0;
+var r4=await sb.from("notes").insert({user_id:user.id,video_id:cur.id,at_seconds:s,body:b});if(r4.error)return toast("تعذّر الحفظ");
+var n=await sb.from("notes").select("*").eq("video_id",cur.id).order("at_seconds");notes=n.data||[];$("#notes").innerHTML=notesH();$("#nb").value="";return}
+if(t.id=="qb"){if(!user)return toast("سجّل الدخول أولًا");var q=$("#qi").value.trim();if(!q)return;
+var r5=await sb.from("questions").insert({video_id:cur.id,user_id:user.id,body:q});if(r5.error)return toast("تعذّر الإرسال");
+var q2=await sb.from("questions").select("*,profiles(name)").eq("video_id",cur.id).order("created_at");qs=q2.data||[];$("#qs").innerHTML=qsH();$("#qi").value=""}
+});
+
+(async function(){var r=await sb.auth.getSession();await setUser(r.data.session);await loadVids();render();
+sb.auth.onAuthStateChange(function(ev,s){setTimeout(function(){setUser(s).then(render)},0)})})();
+</script>
+</body>
+</html>
